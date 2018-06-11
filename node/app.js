@@ -1,5 +1,7 @@
 'use strict';
 
+const _ = require('lodash');
+const Promise = require('bluebird');
 const bodyParser = require('body-parser');
 const envvar = require('envvar');
 const exphbs = require('express-handlebars');
@@ -12,7 +14,10 @@ const SMARTCAR_SECRET = envvar.string('SMARTCAR_SECRET');
 const SMARTCAR_REDIRECT_URI = envvar.string('SMARTCAR_REDIRECT_URI', `http://localhost:${PORT}/callback`);
 const SMARTCAR_MODE = envvar.oneOf('SMARTCAR_MODE', ['development', 'production'], 'development');
 
-const ACCESS_TOKEN = null;
+let ACCESS_TOKEN = null;
+let VEHICLES = null;
+let VEHICLE_INFO = null;
+let RESPONSE = null;
 
 // Initialize Smartcar client
 const client = new smartcar.AuthClient({
@@ -34,7 +39,65 @@ app.engine('.hbs', exphbs({
 app.set('view engine', '.hbs');
 
 app.get('/', function(request, response, next) {
-  response.render('home');
+  response.render('home', {
+    authUrl: client.getAuthUrl(),
+    accessToken: ACCESS_TOKEN,
+  });
+});
+
+app.get('/callback', function(request, response, next) {
+  const code = _.get(request, 'query.code');
+
+  // exchange code for access token
+  client.exchangeCode(code)
+    .then(function(access) {
+      ACCESS_TOKEN = _.get(access, 'accessToken');
+      response.redirect('/vehicles');
+    })
+    .catch(function(err) {
+      console.log('there has been an error!!!!');
+      console.log(err);
+      response.redirect('/');
+    });
+});
+
+app.get('/vehicles', function(request, response, next) {
+
+  if (!ACCESS_TOKEN) {
+    response.redirect('/');
+  }
+
+  smartcar.getVehicleIds(ACCESS_TOKEN)
+    .then(function(res) {
+      const vehicleIds = _.get(res, 'vehicles');
+
+      const vehicles = {};
+      _.forEach(vehicleIds, vehicleId => {
+        vehicles[vehicleId] = {
+          id: vehicleId,
+          instance: new smartcar.Vehicle(vehicleId, ACCESS_TOKEN),
+        };
+      });
+
+      // Add vehicle info to vehicle objects
+      const vehicleInfoPromises = _.map(vehicles, ({instance}) => instance.info());
+      return Promise.all(vehicleInfoPromises)
+        .then(function(vehicleInfos) {
+
+          _.forEach(vehicleInfos, vehicleInfo => {
+            const {id} = vehicleInfo;
+            vehicles[id] = Object.assign(vehicles[id], vehicleInfo);
+          });
+
+          response.render('vehicles', {vehicles, response: RESPONSE});
+
+        })
+        .catch(function(err) {
+          console.log(err);
+          response.redirect('/');
+        });
+    });
+
 });
 
 app.listen(PORT, function() {

@@ -1,3 +1,6 @@
-<h1>Smartcar Sample App</h1>
+<div>Auth url: {{authUrl}}</div>
+<button type="button" onclick="window.location.href='{{authUrl}}'">Connect your car</button>
 
-<button type="button">Click Me!</button>
+{{#if accessToken}}
+  <div>Access token: {{accessToken}}</div>
+{{/if}}

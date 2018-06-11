@@ -17,10 +17,12 @@
   },
   "homepage": "https://github.com/smartcar/demo#readme",
   "dependencies": {
+    "bluebird": "^3.5.1",
     "body-parser": "^1.18.3",
     "envvar": "^2.0.0",
     "express": "^4.16.3",
     "express-handlebars": "^3.0.0",
+    "lodash": "^4.17.10",
     "smartcar": "^3.0.1"
   }
 }

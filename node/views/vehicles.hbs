@@ -1,0 +1,28 @@
+<div className="vehicle-selector">
+  Select a vehicle:
+  <select>
+    {{#each vehicles}}
+      <option value="{{this.id}}">{{this.year}} {{this.make}} {{this.model}}</option>
+    {{/each}}
+  </select>
+</div>
+
+<div className="request-selector">
+  Select a request type:
+  <select>
+    <option value="request-info">Vehicle info</option>
+    <option value="request-info">Location</option>
+    <option value="request-info">Odometer</option>
+    <option value="request-info">Lock doors</option>
+    <option value="request-info">Unlock doors</option>
+  </select>
+</div>
+
+<button type="button">Send request</button>
+
+{{#if response}}
+  <div className="request-response">
+    Response:
+
+  </div>
+{{/if}}
