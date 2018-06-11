@@ -19,6 +19,7 @@
   "dependencies": {
     "envvar": "^2.0.0",
     "express": "^4.16.3",
+    "express-handlebars": "^3.0.0",
     "smartcar": "^3.0.1"
   }
 }
