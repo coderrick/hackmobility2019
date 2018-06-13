@@ -5,24 +5,25 @@
   </p>
 
   <form action="/request" method="post">
-    <label class="label" for="vehicle">Select a vehicle:</label>
-    <select id="vehicle" name="vehicleId">
-      {{#each vehicles}}
-      <option value="{{id}}">{{year}} {{make}} {{model}}</option>
-      {{/each}}
-    </select>
-    <label class="label" for="request">Select a request type:</label>
-    <select id="request" name="requestType">
-      <option value="info">Vehicle info</option>
-      <option value="location">Location</option>
-      <option value="odometer">Odometer</option>
-      <option value="lock">Lock doors</option>
-      <option value="unlock">Unlock doors</option>
-    </select>
-    <input type="submit" value="Send request"></input>
+    <div class="form-group">
+      <label class="label" for="vehicle">Select a vehicle:</label>
+      <select class="form-control" id="vehicle" name="vehicleId">
+        {{#each vehicles}}
+        <option value="{{id}}">{{year}} {{make}} {{model}}</option>
+        {{/each}}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="label" for="request">Select a request type:</label>
+      <select class="form-control" id="request" name="requestType">
+        <option value="info">Vehicle info</option>
+        <option value="location">Location</option>
+        <option value="odometer">Odometer</option>
+        <option value="lock">Lock doors</option>
+        <option value="unlock">Unlock doors</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Send request</button>
+    <a href="/" class="btn btn-secondary" role="button">Start over</a>
   </form>
-
-  <div>
-    <a href="/">Start over</a>.
-  </div>
 </div>
