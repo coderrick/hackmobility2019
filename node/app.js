@@ -7,14 +7,25 @@ const envvar = require('envvar');
 const exphbs = require('express-handlebars');
 const express = require('express');
 const smartcar = require('smartcar');
+const url = require('url');
 
+// Set Smartcar configuration
 const PORT = envvar.number('PORT', 8000);
 const SMARTCAR_CLIENT_ID = envvar.string('SMARTCAR_CLIENT_ID');
 const SMARTCAR_SECRET = envvar.string('SMARTCAR_SECRET');
+
+// Redirect uri must be added to the application's allowed redirect uris
+// in the Smartcar developer portal
 const SMARTCAR_REDIRECT_URI = envvar.string('SMARTCAR_REDIRECT_URI', `http://localhost:${PORT}/callback`);
+
+// Setting MODE to "development" will show Smartcar's mock vehicle
 const SMARTCAR_MODE = envvar.oneOf('SMARTCAR_MODE', ['development', 'production'], 'development');
 
+// For the purposes of this demo, we store the access token in memory.
+// For a production application, please store the access token in a persistent
+// data store.
 let ACCESS_TOKEN = null;
+
 let VEHICLES = null;
 let RESPONSE = null;
 
@@ -26,50 +37,75 @@ const client = new smartcar.AuthClient({
   development: SMARTCAR_MODE === 'development',
 });
 
+// Configure express server
 const app = express();
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({
   extended: false
 }));
+
+// Use handlebars
 app.engine('.hbs', exphbs({
   defaultLayout: 'main',
   extname: '.hbs',
 }));
 app.set('view engine', '.hbs');
 
+// Routes
 app.get('/', function(request, response, next) {
+
   response.render('home', {
     authUrl: client.getAuthUrl(),
-    accessToken: ACCESS_TOKEN,
   });
+
+});
+
+app.get('/error', function(request, response, next) {
+
+  const {action, message} = request.query;
+  if (!action && !message) {
+    return response.redirect('/');
+  }
+
+  response.render('error', {action, message});
+
 });
 
 app.get('/callback', function(request, response, next) {
-  const code = _.get(request, 'query.code');
 
-  // exchange code for access token
+  const code = _.get(request, 'query.code');
+  if (!code) {
+    return response.redirect('/');
+  }
+
+  // Exchange authorization code for access token
   client.exchangeCode(code)
     .then(function(access) {
       ACCESS_TOKEN = _.get(access, 'accessToken');
-      response.redirect('/vehicles');
+      return response.redirect('/vehicles');
     })
     .catch(function(err) {
-      console.log('there has been an error!!!!');
-      console.log(err);
-      response.redirect('/');
+      return response.redirect(url.format({
+        pathname: '/error',
+        query: {
+          message:err.message || `Failed to exchange authorization code for access token`,
+          action: 'exchanging authorization code for access token',
+        },
+      }));
     });
+
 });
 
 app.get('/vehicles', function(request, response, next) {
 
   if (!ACCESS_TOKEN) {
-    response.redirect('/');
+    return response.redirect('/');
   }
 
   smartcar.getVehicleIds(ACCESS_TOKEN)
     .then(function(res) {
-      const vehicleIds = _.get(res, 'vehicles');
 
+      const vehicleIds = _.get(res, 'vehicles');
       const vehicles = {};
       _.forEach(vehicleIds, vehicleId => {
         vehicles[vehicleId] = {
@@ -82,7 +118,6 @@ app.get('/vehicles', function(request, response, next) {
       const vehicleInfoPromises = _.map(vehicles, ({instance}) => instance.info());
       return Promise.all(vehicleInfoPromises)
         .then(function(vehicleInfos) {
-
           _.forEach(vehicleInfos, vehicleInfo => {
             const {id} = vehicleInfo;
             vehicles[id] = Object.assign(vehicles[id], vehicleInfo);
@@ -90,76 +125,129 @@ app.get('/vehicles', function(request, response, next) {
 
           VEHICLES = vehicles;
           response.render('vehicles', {vehicles, response: RESPONSE});
+
         })
         .catch(function(err) {
-          console.log(err);
-          response.redirect('/');
+          return response.redirect(url.format({
+            pathname: '/error',
+            query: {
+              message: err.message || 'Failed to get vehicle info.',
+              action: 'fetching vehicle info',
+            },
+          }));
         });
     });
 
 });
 
 app.post('/request', function(request, response, next) {
-  const {vehicleId, requestType} = request.body;
-  const vehicle = VEHICLES[vehicleId];
+
+  const {vehicleId, requestType: type} = request.body;
+  const vehicle = _.get(VEHICLES, vehicleId);
   const {instance} = vehicle;
 
   let data = null;
 
-  switch(requestType) {
+  switch(type) {
     case 'info':
       instance.info()
         .then(function(res) {
-          response.render('data', {
-            vehicle,
-            data: res,
-            type: requestType,
-          });
-        });
+          response.render('data', {data: res, type, vehicle});
+        })
+        .catch(function(err) {
+          return response.redirect(url.format({
+            pathname: '/error',
+            query: {
+              message: err.message || 'Failed to get vehicle info.',
+              action: 'fetching vehicle info',
+            },
+          }));
+        })
       break;
     case 'location':
       instance.location()
         .then(function(res) {
           const {data} = res;
-          response.render('data', {
-            vehicle,
-            data,
-            type: requestType,
-          });
+          response.render('data', {data, type, vehicle});
+        })
+        .catch(function(err) {
+          return response.redirect(url.format({
+            pathname: '/error',
+            query: {
+              message: err.message || 'Failed to get vehicle location.',
+              action: 'fetching vehicle location',
+            },
+          }));
         });
+      break;
     case 'odometer':
       instance.odometer()
         .then(function(res) {
           const {data} = res;
-          response.render('data', {
-            vehicle,
-            data,
-            type: requestType,
-          });
+          response.render('data', {data, type, vehicle});
+        })
+        .catch(function(err) {
+          return response.redirect(url.format({
+            pathname: '/error',
+            query: {
+              message: err.message || 'Failed to get vehicle odometer.',
+              action: 'fetching vehicle odometer',
+            },
+          }));
         });
+      break;
     case 'lock':
       instance.lock()
         .then(function() {
           response.render('data', {
-            vehicle,
+            // Lock and unlock requests do not return data if successful
             data: {
               action: 'Lock request sent.',
             },
-            type: requestType,
+            type,
+            vehicle,
           });
+        })
+        .catch(function(err) {
+          return response.redirect(url.format({
+            pathname: '/error',
+            query: {
+              message: err.message || 'Failed to send lock request to vehicle.',
+              action: 'locking vehicle',
+            },
+          }));
         });
+      break;
     case 'unlock':
       instance.unlock()
         .then(function() {
-          response.render('unlock', {
+          response.render('data', {
             vehicle,
+            type,
+            // Lock and unlock requests do not return data if successful
             data: {
               action: 'Unlock request sent.',
             },
-            type: requestType,
           });
-        });
+        })
+        .catch(function(err) {
+          return response.redirect(url.format({
+            pathname: '/error',
+            query: {
+              message: err.message || 'Failed to send unlock request to vehicle.',
+              action: 'unlocking vehicle',
+            },
+          }));
+        })
+      break;
     default:
+      return response.redirect(url.format({
+        pathname: '/error',
+        query: {
+          message: `Failed to find request type ${requestType}`,
+          action: 'sending request to vehicle',
+        },
+      }));
   }
 
 });

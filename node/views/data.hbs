@@ -1,10 +1,18 @@
-<ul>
-  <li>vehicle: {{vehicle.year}} {{vehicle.make}} {{vehicle.model}}</li>
-  {{#each data}}
-    <li>{{@key}}: {{this}}</li>
-  {{/each}}
-</ul>
+<div id="vehicles">
+  <h3>Step 3: Retrieve data</h3>
+  <p>
+    You've successfully sent a {{type}} request to the {{vehicle.year}} {{vehicle.make}} {{vehicle.model}}.
 
-<div>
-  Return to <a href="/vehicles">vehicles</a>.
+    To make another request, click "Return to vehicles."
+  </p>
+  <ul>
+    <li>vehicle: {{vehicle.year}} {{vehicle.make}} {{vehicle.model}}</li>
+    {{#each data}}
+    <li>{{@key}}: {{this}}</li>
+    {{/each}}
+  </ul>
+
+  <div>
+    <a href="/vehicles">Return to vehicles</a> or <a href="/">start over</a>.
+  </div>
 </div>

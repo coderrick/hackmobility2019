@@ -1,17 +1,28 @@
-<form action="/request" method="post">
-  <label class="label" for="vehicle">Select a vehicle:</label>
-  <select id="vehicle" name="vehicleId">
-    {{#each vehicles}}
+<div id="vehicles">
+  <h3>Step 2: Make a request</h3>
+  <p>
+    Congrats! You have successfully authenticated with Smartcar and exchanged an authorization code for an access token that can be used to make requests to vehicles. Now, select a vehicle and request type below and click "Send request" to trigger a request to the vehicle.
+  </p>
+
+  <form action="/request" method="post">
+    <label class="label" for="vehicle">Select a vehicle:</label>
+    <select id="vehicle" name="vehicleId">
+      {{#each vehicles}}
       <option value="{{id}}">{{year}} {{make}} {{model}}</option>
-    {{/each}}
-  </select>
-  <label class="label" for="request">Select a request type:</label>
-  <select id="request" name="requestType">
-    <option value="info">Vehicle info</option>
-    <option value="location">Location</option>
-    <option value="odometer">Odometer</option>
-    <option value="lock">Lock doors</option>
-    <option value="unlock">Unlock doors</option>
-  </select>
-  <input type="submit" value="Submit"></input>
-</form>
+      {{/each}}
+    </select>
+    <label class="label" for="request">Select a request type:</label>
+    <select id="request" name="requestType">
+      <option value="info">Vehicle info</option>
+      <option value="location">Location</option>
+      <option value="odometer">Odometer</option>
+      <option value="lock">Lock doors</option>
+      <option value="unlock">Unlock doors</option>
+    </select>
+    <input type="submit" value="Send request"></input>
+  </form>
+
+  <div>
+    <a href="/">Start over</a>.
+  </div>
+</div>
