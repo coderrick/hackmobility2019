@@ -1,4 +1,4 @@
-### smartcar-node demo
+### Getting Started with Smartcar + Node
 The goal of this demo application is to make it quick and easy to get started with Smartcar.
 
 If you have questions as you get started, check out our [support center](https://support.smartcar.com) and [docs](https://smartcar.com/docs).
@@ -9,8 +9,8 @@ Before you run the demo application, you will need:
 
 To run the demo:
 ```bash
-git clone https://github.com/smartcar/demo.git
-cd demo/node
+git clone https://github.com/smartcar/getting-started.git
+cd getting-started/node
 npm install
 
 # For security, you must configure http://localhost:8000/callback as a redirect uri in Smartcar's developer portal.

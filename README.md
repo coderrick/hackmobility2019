@@ -1,4 +1,4 @@
-# Smartcar Demo
+# Getting Started with Smartcar
 
-This repository includes Smartcar example apps using our [SDKs](https://smartcar.com/docs#sdks):
+This repository includes Smartcar sample apps to help get you started with building on Smartcar!
 - [Node](/node)
