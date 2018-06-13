@@ -1,0 +1,10 @@
+<ul>
+  <li>vehicle: {{vehicle.year}} {{vehicle.make}} {{vehicle.model}}</li>
+  {{#each data}}
+    <li>{{@key}}: {{this}}</li>
+  {{/each}}
+</ul>
+
+<div>
+  Return to <a href="/vehicles">vehicles</a>.
+</div>

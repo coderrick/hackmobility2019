@@ -16,7 +16,6 @@ const SMARTCAR_MODE = envvar.oneOf('SMARTCAR_MODE', ['development', 'production'
 
 let ACCESS_TOKEN = null;
 let VEHICLES = null;
-let VEHICLE_INFO = null;
 let RESPONSE = null;
 
 // Initialize Smartcar client
@@ -89,14 +88,79 @@ app.get('/vehicles', function(request, response, next) {
             vehicles[id] = Object.assign(vehicles[id], vehicleInfo);
           });
 
+          VEHICLES = vehicles;
           response.render('vehicles', {vehicles, response: RESPONSE});
-
         })
         .catch(function(err) {
           console.log(err);
           response.redirect('/');
         });
     });
+
+});
+
+app.post('/request', function(request, response, next) {
+  const {vehicleId, requestType} = request.body;
+  const vehicle = VEHICLES[vehicleId];
+  const {instance} = vehicle;
+
+  let data = null;
+
+  switch(requestType) {
+    case 'info':
+      instance.info()
+        .then(function(res) {
+          response.render('data', {
+            vehicle,
+            data: res,
+            type: requestType,
+          });
+        });
+      break;
+    case 'location':
+      instance.location()
+        .then(function(res) {
+          const {data} = res;
+          response.render('data', {
+            vehicle,
+            data,
+            type: requestType,
+          });
+        });
+    case 'odometer':
+      instance.odometer()
+        .then(function(res) {
+          const {data} = res;
+          response.render('data', {
+            vehicle,
+            data,
+            type: requestType,
+          });
+        });
+    case 'lock':
+      instance.lock()
+        .then(function() {
+          response.render('data', {
+            vehicle,
+            data: {
+              action: 'Lock request sent.',
+            },
+            type: requestType,
+          });
+        });
+    case 'unlock':
+      instance.unlock()
+        .then(function() {
+          response.render('unlock', {
+            vehicle,
+            data: {
+              action: 'Unlock request sent.',
+            },
+            type: requestType,
+          });
+        });
+    default:
+  }
 
 });
 

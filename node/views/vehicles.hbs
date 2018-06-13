@@ -1,28 +1,17 @@
-<div className="vehicle-selector">
-  Select a vehicle:
-  <select>
+<form action="/request" method="post">
+  <label class="label" for="vehicle">Select a vehicle:</label>
+  <select id="vehicle" name="vehicleId">
     {{#each vehicles}}
-      <option value="{{this.id}}">{{this.year}} {{this.make}} {{this.model}}</option>
+      <option value="{{id}}">{{year}} {{make}} {{model}}</option>
     {{/each}}
   </select>
-</div>
-
-<div className="request-selector">
-  Select a request type:
-  <select>
-    <option value="request-info">Vehicle info</option>
-    <option value="request-info">Location</option>
-    <option value="request-info">Odometer</option>
-    <option value="request-info">Lock doors</option>
-    <option value="request-info">Unlock doors</option>
+  <label class="label" for="request">Select a request type:</label>
+  <select id="request" name="requestType">
+    <option value="info">Vehicle info</option>
+    <option value="location">Location</option>
+    <option value="odometer">Odometer</option>
+    <option value="lock">Lock doors</option>
+    <option value="unlock">Unlock doors</option>
   </select>
-</div>
-
-<button type="button">Send request</button>
-
-{{#if response}}
-  <div className="request-response">
-    Response:
-
-  </div>
-{{/if}}
+  <input type="submit" value="Submit"></input>
+</form>
