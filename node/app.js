@@ -22,8 +22,8 @@ const SMARTCAR_REDIRECT_URI = envvar.string('SMARTCAR_REDIRECT_URI', `http://loc
 const SMARTCAR_MODE = envvar.oneOf('SMARTCAR_MODE', ['development', 'production'], 'development');
 
 // For the purposes of this demo, we store the access token in memory.
-// For a production application, please store the access token in a persistent
-// data store.
+// This server will only work for one user account at a time. For a production
+// application, please store access tokens in a persistent data store.
 let ACCESS_TOKEN = null;
 
 let VEHICLES = {};
