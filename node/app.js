@@ -53,76 +53,76 @@ app.set('view engine', '.hbs');
 /**
  * Render home page with a "Connect your car" button.
  */
+app.get('/', function(req, res, next) {
 
-  response.render('home', {
+  res.render('home', {
     authUrl: client.getAuthUrl(),
   });
 
 });
 
-app.get('/error', function(request, response, next) {
 /**
  * Helper function that redirects to the /error route with a specified
  * error message and action.
  */
+const redirectToError = (res, message, action) => res.redirect(url.format({
+  pathname: '/error',
+  query: {message, action},
+}));
 
 /**
  * Render error page. Displays the action that was attempted and the error
  * message associated with that action (extracted from query params).
  */
+app.get('/error', function(req, res, next) {
 
-  const {action, message} = request.query;
+  const {action, message} = req.query;
   if (!action && !message) {
-    return response.redirect('/');
+    return res.redirect('/');
   }
 
-  response.render('error', {action, message});
+  res.render('error', {action, message});
 
 });
 
-app.get('/callback', function(request, response, next) {
 /**
  * Called on return from the Smartcar authorization flow. This route extracts
  * the authorization code from the url and exchanges the code with Smartcar
  * for an access token that can be used to make requests to the vehicle.
  */
+app.get('/callback', function(req, res, next) {
 
-  const code = _.get(request, 'query.code');
+  const code = _.get(req, 'query.code');
   if (!code) {
-    return response.redirect('/');
+    return res.redirect('/');
   }
 
   // Exchange authorization code for access token
   client.exchangeCode(code)
     .then(function(access) {
       ACCESS_TOKEN = _.get(access, 'accessToken');
-      return response.redirect('/vehicles');
+      return res.redirect('/vehicles');
     })
     .catch(function(err) {
-      return response.redirect(url.format({
-        pathname: '/error',
-        query: {
-          message:err.message || `Failed to exchange authorization code for access token`,
-          action: 'exchanging authorization code for access token',
-        },
-      }));
+      const message = err.message || `Failed to exchange authorization code for access token`;
+      const action = 'exchanging authorization code for access token';
+      return redirectToError(res, message, action);
     });
 
 });
 
-app.get('/vehicles', function(request, response, next) {
 /**
  * Renders a list of vehicles. Lets the user select a vehicle and type of
  * request, then sends a POST request to the /request route.
  */
+app.get('/vehicles', function(req, res, next) {
 
   if (!ACCESS_TOKEN) {
-    return response.redirect('/');
+    return res.redirect('/');
   }
 
   smartcar.getVehicleIds(ACCESS_TOKEN)
-    .then(res => {
-      const vehicleIds = _.get(res, 'vehicles');
+    .then(function({vehicles: vehicleIds}) {
       const vehiclePromises = vehicleIds.map(vehicleId => {
         const vehicle = new smartcar.Vehicle(vehicleId, ACCESS_TOKEN);
         VEHICLES[vehicleId] = {
@@ -133,28 +133,31 @@ app.get('/vehicles', function(request, response, next) {
       });
 
       return Promise.all(vehiclePromises)
-        .then(vehicles => {
-          response.render('vehicles', {vehicles});
+        .then(function(vehicles) {
+
+          // Add vehicle info to vehicle objects
+          _.forEach(vehicles, vehicle => {
+            const {id: vehicleId} = vehicle;
+            VEHICLES[vehicleId] = Object.assign(VEHICLES[vehicleId], vehicle);
+          });
+
+          res.render('vehicles', {vehicles});
         })
-        .catch(err => {
-          return response.redirect(url.format({
-            pathname: '/error',
-            query: {
-              message: err.message || 'Failed to get vehicle info.',
-              action: 'fetching vehicle info',
-            },
-          }));
+        .catch(function(err) {
+          const message = err.message || 'Failed to get vehicle info.';
+          const action = 'fetching vehicle info';
+          return redirectToError(res, message, action);
         });
     });
 
 });
 
-app.post('/request', function(request, response, next) {
 /**
  * Triggers a request to the vehicle and renders the response.
  */
+app.post('/request', function(req, res, next) {
 
-  const {vehicleId, requestType: type} = request.body;
+  const {vehicleId, requestType: type} = req.body;
   const vehicle = _.get(VEHICLES, vehicleId);
   const {instance} = vehicle;
 
@@ -163,55 +166,35 @@ app.post('/request', function(request, response, next) {
   switch(type) {
     case 'info':
       instance.info()
-        .then(function(res) {
-          response.render('data', {data: res, type, vehicle});
-        })
+        .then(data => res.render('data', {data, type, vehicle}))
         .catch(function(err) {
-          return response.redirect(url.format({
-            pathname: '/error',
-            query: {
-              message: err.message || 'Failed to get vehicle info.',
-              action: 'fetching vehicle info',
-            },
-          }));
-        })
+          const message = err.message || 'Failed to get vehicle info.';
+          const action = 'fetching vehicle info';
+          return redirectToError(res, message, action);
+        });
       break;
     case 'location':
       instance.location()
-        .then(function(res) {
-          const {data} = res;
-          response.render('data', {data, type, vehicle});
-        })
+        .then(({data}) => res.render('data', {data, type, vehicle}))
         .catch(function(err) {
-          return response.redirect(url.format({
-            pathname: '/error',
-            query: {
-              message: err.message || 'Failed to get vehicle location.',
-              action: 'fetching vehicle location',
-            },
-          }));
+          const message = err.message || 'Failed to get vehicle location.';
+          const action = 'fetching vehicle location';
+          return redirectToError(res, message, action);
         });
       break;
     case 'odometer':
       instance.odometer()
-        .then(function(res) {
-          const {data} = res;
-          response.render('data', {data, type, vehicle});
-        })
+        .then(({data}) => res.render('data', {data, type, vehicle}))
         .catch(function(err) {
-          return response.redirect(url.format({
-            pathname: '/error',
-            query: {
-              message: err.message || 'Failed to get vehicle odometer.',
-              action: 'fetching vehicle odometer',
-            },
-          }));
+          const message = err.message || 'Failed to get vehicle odometer.';
+          const action = 'fetching vehicle odometer';
+          return redirectToError(res, message, action);
         });
       break;
     case 'lock':
       instance.lock()
         .then(function() {
-          response.render('data', {
+          res.render('data', {
             // Lock and unlock requests do not return data if successful
             data: {
               action: 'Lock request sent.',
@@ -221,19 +204,15 @@ app.post('/request', function(request, response, next) {
           });
         })
         .catch(function(err) {
-          return response.redirect(url.format({
-            pathname: '/error',
-            query: {
-              message: err.message || 'Failed to send lock request to vehicle.',
-              action: 'locking vehicle',
-            },
-          }));
+          const message = err.message || 'Failed to send lock request to vehicle.';
+          const action = 'locking vehicle';
+          return redirectToError(res, message, action);
         });
       break;
     case 'unlock':
       instance.unlock()
         .then(function() {
-          response.render('data', {
+          res.render('data', {
             vehicle,
             type,
             // Lock and unlock requests do not return data if successful
@@ -243,23 +222,17 @@ app.post('/request', function(request, response, next) {
           });
         })
         .catch(function(err) {
-          return response.redirect(url.format({
-            pathname: '/error',
-            query: {
-              message: err.message || 'Failed to send unlock request to vehicle.',
-              action: 'unlocking vehicle',
-            },
-          }));
-        })
+          const message = err.message || 'Failed to send unlock request to vehicle.';
+          const action = 'unlocking vehicle';
+          return redirectToError(res, message, action);
+        });
       break;
     default:
-      return response.redirect(url.format({
-        pathname: '/error',
-        query: {
-          message: `Failed to find request type ${requestType}`,
-          action: 'sending request to vehicle',
-        },
-      }));
+      return redirectToError(
+        res,
+        `Failed to find request type ${requestType}`,
+        'sending request to vehicle'
+      );
   }
 
 });
