@@ -26,8 +26,7 @@ const SMARTCAR_MODE = envvar.oneOf('SMARTCAR_MODE', ['development', 'production'
 // data store.
 let ACCESS_TOKEN = null;
 
-let VEHICLES = null;
-let RESPONSE = null;
+let VEHICLES = {};
 
 // Initialize Smartcar client
 const client = new smartcar.AuthClient({
@@ -103,31 +102,22 @@ app.get('/vehicles', function(request, response, next) {
   }
 
   smartcar.getVehicleIds(ACCESS_TOKEN)
-    .then(function(res) {
-
+    .then(res => {
       const vehicleIds = _.get(res, 'vehicles');
-      const vehicles = {};
-      _.forEach(vehicleIds, vehicleId => {
-        vehicles[vehicleId] = {
+      const vehiclePromises = vehicleIds.map(vehicleId => {
+        const vehicle = new smartcar.Vehicle(vehicleId, ACCESS_TOKEN);
+        VEHICLES[vehicleId] = {
           id: vehicleId,
-          instance: new smartcar.Vehicle(vehicleId, ACCESS_TOKEN),
+          instance: vehicle,
         };
+        return vehicle.info();
       });
 
-      // Add vehicle info to vehicle objects
-      const vehicleInfoPromises = _.map(vehicles, ({instance}) => instance.info());
-      return Promise.all(vehicleInfoPromises)
-        .then(function(vehicleInfos) {
-          _.forEach(vehicleInfos, vehicleInfo => {
-            const {id} = vehicleInfo;
-            vehicles[id] = Object.assign(vehicles[id], vehicleInfo);
-          });
-
-          VEHICLES = vehicles;
-          response.render('vehicles', {vehicles, response: RESPONSE});
-
+      return Promise.all(vehiclePromises)
+        .then(vehicles => {
+          response.render('vehicles', {vehicles});
         })
-        .catch(function(err) {
+        .catch(err => {
           return response.redirect(url.format({
             pathname: '/error',
             query: {
