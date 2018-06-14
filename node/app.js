@@ -36,22 +36,23 @@ const client = new smartcar.AuthClient({
   development: SMARTCAR_MODE === 'development',
 });
 
-// Configure express server
+/**
+ * Configure express server with handlebars as the view engine.
+ */
 const app = express();
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({
   extended: false
 }));
-
-// Use handlebars
 app.engine('.hbs', exphbs({
   defaultLayout: 'main',
   extname: '.hbs',
 }));
 app.set('view engine', '.hbs');
 
-// Routes
-app.get('/', function(request, response, next) {
+/**
+ * Render home page with a "Connect your car" button.
+ */
 
   response.render('home', {
     authUrl: client.getAuthUrl(),
@@ -60,6 +61,15 @@ app.get('/', function(request, response, next) {
 });
 
 app.get('/error', function(request, response, next) {
+/**
+ * Helper function that redirects to the /error route with a specified
+ * error message and action.
+ */
+
+/**
+ * Render error page. Displays the action that was attempted and the error
+ * message associated with that action (extracted from query params).
+ */
 
   const {action, message} = request.query;
   if (!action && !message) {
@@ -71,6 +81,11 @@ app.get('/error', function(request, response, next) {
 });
 
 app.get('/callback', function(request, response, next) {
+/**
+ * Called on return from the Smartcar authorization flow. This route extracts
+ * the authorization code from the url and exchanges the code with Smartcar
+ * for an access token that can be used to make requests to the vehicle.
+ */
 
   const code = _.get(request, 'query.code');
   if (!code) {
@@ -96,6 +111,10 @@ app.get('/callback', function(request, response, next) {
 });
 
 app.get('/vehicles', function(request, response, next) {
+/**
+ * Renders a list of vehicles. Lets the user select a vehicle and type of
+ * request, then sends a POST request to the /request route.
+ */
 
   if (!ACCESS_TOKEN) {
     return response.redirect('/');
@@ -131,6 +150,9 @@ app.get('/vehicles', function(request, response, next) {
 });
 
 app.post('/request', function(request, response, next) {
+/**
+ * Triggers a request to the vehicle and renders the response.
+ */
 
   const {vehicleId, requestType: type} = request.body;
   const vehicle = _.get(VEHICLES, vehicleId);
