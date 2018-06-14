@@ -1,4 +1,4 @@
-### Getting Started with Smartcar + Node
+### smartcar-node demo
 The goal of this demo application is to make it quick and easy to get started with Smartcar.
 
 If you have questions as you get started, check out our [support center](https://support.smartcar.com) and [docs](https://smartcar.com/docs).
