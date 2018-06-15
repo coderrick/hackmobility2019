@@ -11,7 +11,7 @@
     "url": "git+https://github.com/smartcar/demo.git"
   },
   "author": "engineering@smartcar.com",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/smartcar/demo/issues"
   },
