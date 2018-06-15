@@ -16,6 +16,9 @@
     "url": "https://github.com/smartcar/demo/issues"
   },
   "homepage": "https://github.com/smartcar/demo#readme",
+  "engines": {
+    "node": ">=6.0.0"
+  },
   "dependencies": {
     "bluebird": "^3.5.1",
     "body-parser": "^1.18.3",
