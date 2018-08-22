@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const envvar = require('envvar');
 const exphbs = require('express-handlebars');
 const express = require('express');
+const session = require('cookie-session');
 const smartcar = require('smartcar');
 const url = require('url');
 
@@ -19,14 +20,7 @@ const SMARTCAR_SECRET = envvar.string('SMARTCAR_SECRET');
 const SMARTCAR_REDIRECT_URI = envvar.string('SMARTCAR_REDIRECT_URI', `http://localhost:${PORT}/callback`);
 
 // Setting MODE to "development" will show Smartcar's mock vehicle
-const SMARTCAR_MODE = envvar.oneOf('SMARTCAR_MODE', ['development', 'production'], 'development');
-
-// For the purposes of this demo, we store the access token in memory.
-// This server will only work for one user account at a time. For a production
-// application, please store access tokens in a persistent data store.
-let ACCESS_TOKEN = null;
-
-let VEHICLES = {};
+const SMARTCAR_MODE = envvar.oneOf('SMARTCAR_MODE', ['development', 'production'], 'production');
 
 // Initialize Smartcar client
 const client = new smartcar.AuthClient({
@@ -40,6 +34,10 @@ const client = new smartcar.AuthClient({
  * Configure express server with handlebars as the view engine.
  */
 const app = express();
+app.use(session({
+  name: 'demo-session',
+  secret: 'super-duper-secret',
+}));
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({
   extended: false
@@ -86,12 +84,27 @@ app.get('/error', function(req, res, next) {
 });
 
 /**
+ * Disconnect each vehicle to cleanly logout.
+ */
+app.get('/logout', function(req, res, next) {
+  const {access, vehicles} = req.session;
+  return Promise.map(_.keys(vehicles), (id) => {
+    const instance = new smartcar.Vehicle(id, access.accessToken);
+    instance.disconnect();
+  })
+    .finally(() => {
+      req.session = null;
+      res.redirect('/');
+    });
+
+  });
+
+/**
  * Called on return from the Smartcar authorization flow. This route extracts
  * the authorization code from the url and exchanges the code with Smartcar
  * for an access token that can be used to make requests to the vehicle.
  */
 app.get('/callback', function(req, res, next) {
-
   const code = _.get(req, 'query.code');
   if (!code) {
     return res.redirect('/');
@@ -100,7 +113,9 @@ app.get('/callback', function(req, res, next) {
   // Exchange authorization code for access token
   client.exchangeCode(code)
     .then(function(access) {
-      ACCESS_TOKEN = _.get(access, 'accessToken');
+      req.session = {};
+      req.session.vehicles = {};
+      req.session.access = access;
       return res.redirect('/vehicles');
     })
     .catch(function(err) {
@@ -116,32 +131,31 @@ app.get('/callback', function(req, res, next) {
  * request, then sends a POST request to the /request route.
  */
 app.get('/vehicles', function(req, res, next) {
-
-  if (!ACCESS_TOKEN) {
+  const {access, vehicles} = req.session;
+  if (!access) {
     return res.redirect('/');
   }
-
-  smartcar.getVehicleIds(ACCESS_TOKEN)
-    .then(function({vehicles: vehicleIds}) {
+  const {accessToken} = access;
+  smartcar.getVehicleIds(accessToken)
+    .then(function(data) {
+      const vehicleIds = data.vehicles;
       const vehiclePromises = vehicleIds.map(vehicleId => {
-        const vehicle = new smartcar.Vehicle(vehicleId, ACCESS_TOKEN);
-        VEHICLES[vehicleId] = {
+        const vehicle = new smartcar.Vehicle(vehicleId, accessToken);
+        req.session.vehicles[vehicleId] = {
           id: vehicleId,
-          instance: vehicle,
         };
         return vehicle.info();
       });
 
       return Promise.all(vehiclePromises)
-        .then(function(vehicles) {
-
+        .then(function(data) {
           // Add vehicle info to vehicle objects
-          _.forEach(vehicles, vehicle => {
+          _.forEach(data, vehicle => {
             const {id: vehicleId} = vehicle;
-            VEHICLES[vehicleId] = Object.assign(VEHICLES[vehicleId], vehicle);
+            req.session.vehicles[vehicleId] = vehicle;
           });
 
-          res.render('vehicles', {vehicles});
+          res.render('vehicles', {vehicles: req.session.vehicles});
         })
         .catch(function(err) {
           const message = err.message || 'Failed to get vehicle info.';
@@ -156,10 +170,14 @@ app.get('/vehicles', function(req, res, next) {
  * Triggers a request to the vehicle and renders the response.
  */
 app.post('/request', function(req, res, next) {
+  const {access, vehicles} = req.session;
+  if (!access) {
+    return res.redirect('/');
+  }
 
   const {vehicleId, requestType: type} = req.body;
-  const vehicle = _.get(VEHICLES, vehicleId);
-  const {instance} = vehicle;
+  const vehicle = vehicles[vehicleId];
+  const instance = new smartcar.Vehicle(vehicleId, access.accessToken);
 
   let data = null;
 
