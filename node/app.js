@@ -8,6 +8,7 @@ const exphbs = require('express-handlebars');
 const express = require('express');
 const session = require('cookie-session');
 const smartcar = require('smartcar');
+const opn = require('opn');
 const url = require('url');
 
 // Set Smartcar configuration
@@ -257,4 +258,5 @@ app.post('/request', function(req, res, next) {
 
 app.listen(PORT, function() {
   console.log(`smartcar-demo server listening on port ${PORT}`);
+  opn(`http://localhost:${PORT}`);
 });
