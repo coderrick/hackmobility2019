@@ -10,11 +10,21 @@ const session = require('cookie-session');
 const smartcar = require('smartcar');
 const opn = require('opn');
 const url = require('url');
+const validator = require('validator');
 
 // Set Smartcar configuration
 const PORT = envvar.number('PORT', 8000);
 const SMARTCAR_CLIENT_ID = envvar.string('SMARTCAR_CLIENT_ID');
 const SMARTCAR_SECRET = envvar.string('SMARTCAR_SECRET');
+
+// Validate Client ID and Secret are UUIDs
+if (!validator.isUUID(SMARTCAR_CLIENT_ID)) {
+  throw new Error('CLIENT_ID is invalid. Please check to make sure you have replaced CLIENT_ID with the Client ID obtained from the Smartcar developer dashboard.');
+}
+
+if (!validator.isUUID(SMARTCAR_SECRET)) {
+  throw new Error('SMARTCAR_SECRET is invalid. Please check to make sure you have replaced SMARTCAR_SECRET with your Client Secret obtained from the Smartcar developer dashboard.');
+}
 
 // Redirect uri must be added to the application's allowed redirect uris
 // in the Smartcar developer portal
