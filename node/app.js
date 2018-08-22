@@ -90,7 +90,7 @@ app.get('/logout', function(req, res, next) {
   const {access, vehicles} = req.session;
   return Promise.map(_.keys(vehicles), (id) => {
     const instance = new smartcar.Vehicle(id, access.accessToken);
-    instance.disconnect();
+    return instance.disconnect();
   })
     .finally(() => {
       req.session = null;
