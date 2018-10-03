@@ -31,14 +31,14 @@ if (!validator.isUUID(SMARTCAR_SECRET)) {
 const SMARTCAR_REDIRECT_URI = envvar.string('SMARTCAR_REDIRECT_URI', `http://localhost:${PORT}/callback`);
 
 // Setting MODE to "development" will show Smartcar's mock vehicle
-const SMARTCAR_MODE = envvar.oneOf('SMARTCAR_MODE', ['development', 'production'], 'production');
+const SMARTCAR_MODE = envvar.oneOf('SMARTCAR_MODE', ['test', 'live'], 'test');
 
 // Initialize Smartcar client
 const client = new smartcar.AuthClient({
   clientId: SMARTCAR_CLIENT_ID,
   clientSecret: SMARTCAR_SECRET,
   redirectUri: SMARTCAR_REDIRECT_URI,
-  development: SMARTCAR_MODE === 'development',
+  testMode: SMARTCAR_MODE === 'test',
 });
 
 /**
@@ -66,6 +66,7 @@ app.get('/', function(req, res, next) {
 
   res.render('home', {
     authUrl: client.getAuthUrl(),
+    testMode: SMARTCAR_MODE === 'test',
   });
 
 });
