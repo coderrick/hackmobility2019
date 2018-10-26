@@ -30,7 +30,7 @@ if (!validator.isUUID(SMARTCAR_SECRET)) {
 // in the Smartcar developer portal
 const SMARTCAR_REDIRECT_URI = envvar.string('SMARTCAR_REDIRECT_URI', `http://localhost:${PORT}/callback`);
 
-// Setting MODE to "development" will show Smartcar's mock vehicle
+// Setting MODE to "test" will run the Smartcar auth flow in test mode
 const SMARTCAR_MODE = envvar.oneOf('SMARTCAR_MODE', ['test', 'live'], 'test');
 
 // Initialize Smartcar client
