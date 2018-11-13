@@ -13,7 +13,7 @@ const url = require('url');
 const validator = require('validator');
 
 // Set Smartcar configuration
-const PORT = envvar.number('PORT', 8000);
+const PORT = process.env.PORT || 8000;
 const SMARTCAR_CLIENT_ID = envvar.string('SMARTCAR_CLIENT_ID');
 const SMARTCAR_SECRET = envvar.string('SMARTCAR_SECRET');
 
