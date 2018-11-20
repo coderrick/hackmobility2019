@@ -1,9 +1,17 @@
 'use strict';
 
+/**
+ * Modify the two variables below so that they have the correct values.
+ *
+ * The client id and secret can be obtained by visiting dashboard.smartcar.com
+ */
+const CLIENT_ID = '<your-smartcar-client-id>';
+const CLIENT_SECRET = '<your-smartcar-client-secret>';
+
+// pull in all dependencies
 const _ = require('lodash');
 const Promise = require('bluebird');
 const bodyParser = require('body-parser');
-const envvar = require('envvar');
 const exphbs = require('express-handlebars');
 const express = require('express');
 const session = require('cookie-session');
@@ -12,30 +20,29 @@ const opn = require('opn');
 const url = require('url');
 const validator = require('validator');
 
-// Set Smartcar configuration
 const PORT = process.env.PORT || 8000;
-const SMARTCAR_CLIENT_ID = envvar.string('SMARTCAR_CLIENT_ID');
-const SMARTCAR_SECRET = envvar.string('SMARTCAR_SECRET');
+const REDIRECT_URI =
+  process.env.REDIRECT_URI || `http://localhost:${PORT}/callback`;
 
 // Validate Client ID and Secret are UUIDs
-if (!validator.isUUID(SMARTCAR_CLIENT_ID)) {
-  throw new Error('CLIENT_ID is invalid. Please check to make sure you have replaced CLIENT_ID with the Client ID obtained from the Smartcar developer dashboard.');
+if (!validator.isUUID(CLIENT_ID)) {
+  throw new Error(
+    'CLIENT_ID is invalid. Please check to make sure you have edited app.js to have the Client ID obtained from the Smartcar developer dashboard (https://dashboard.smartcar.com).'
+  );
 }
 
-if (!validator.isUUID(SMARTCAR_SECRET)) {
-  throw new Error('SMARTCAR_SECRET is invalid. Please check to make sure you have replaced SMARTCAR_SECRET with your Client Secret obtained from the Smartcar developer dashboard.');
+if (!validator.isUUID(CLIENT_SECRET)) {
+  throw new Error(
+    'CLIENT_SECRET is invalid. Please check to make sure you have replaced edited app.js to have the Client Secret obtained from the Smartcar developer dashboard (https://dashboard.smartcar.com).'
+  );
 }
-
-// Redirect uri must be added to the application's allowed redirect uris
-// in the Smartcar developer portal
-const SMARTCAR_REDIRECT_URI = envvar.string('SMARTCAR_REDIRECT_URI', `http://localhost:${PORT}/callback`);
 
 // Initialize Smartcar client
 const client = new smartcar.AuthClient({
-  clientId: SMARTCAR_CLIENT_ID,
-  clientSecret: SMARTCAR_SECRET,
-  redirectUri: SMARTCAR_REDIRECT_URI,
-  testMode: false,
+  clientId: CLIENT_ID,
+  clientSecret: CLIENT_SECRET,
+  redirectUri: REDIRECT_URI,
+  testMode: 'live',
 });
 
 /**
