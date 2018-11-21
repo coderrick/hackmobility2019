@@ -30,15 +30,12 @@ if (!validator.isUUID(SMARTCAR_SECRET)) {
 // in the Smartcar developer portal
 const SMARTCAR_REDIRECT_URI = envvar.string('SMARTCAR_REDIRECT_URI', `http://localhost:${PORT}/callback`);
 
-// Setting MODE to "test" will run the Smartcar auth flow in test mode
-const SMARTCAR_MODE = envvar.oneOf('SMARTCAR_MODE', ['test', 'live'], 'test');
-
 // Initialize Smartcar client
 const client = new smartcar.AuthClient({
   clientId: SMARTCAR_CLIENT_ID,
   clientSecret: SMARTCAR_SECRET,
   redirectUri: SMARTCAR_REDIRECT_URI,
-  testMode: SMARTCAR_MODE === 'test',
+  testMode: false,
 });
 
 /**
@@ -64,9 +61,20 @@ app.set('view engine', '.hbs');
  */
 app.get('/', function(req, res, next) {
 
+  const authUrl = client.getAuthUrl();
+
+  /**
+   * Replace mode=live with mode=test so that we can render a button for test
+   * mode. Normally this is done via the constructor but we need to render a URL
+   * for both modes for this demo.
+   */
+  const testModeAuthUrl = authUrl.replace('mode=live', 'mode=test');
+
   res.render('home', {
-    authUrl: client.getAuthUrl(),
-    testMode: SMARTCAR_MODE === 'test',
+    authUrls: {
+      liveMode: authUrl,
+      testMode: testModeAuthUrl,
+    },
   });
 
 });
