@@ -3,8 +3,8 @@
 
 To run the demo:
 ```bash
-git clone https://github.com/smartcar/getting-started.git
-cd getting-started/node
+git clone https://github.com/smartcar/demo.git
+cd demo/node
 npm install
 
 # Copy your client id and secret from Smartcar's developer portal into app.js
