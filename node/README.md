@@ -8,12 +8,12 @@ cd demo/node
 npm install
 ```
 
-# For security, you must configure http://localhost:8000/callback as a redirect uri in Smartcar's developer portal.
+For security, you must configure http://localhost:8000/callback as a redirect uri in Smartcar's developer portal.
 ```
 export SMARTCAR_CLIENT_ID=<your-client-id>
 export SMARTCAR_SECRET=<your-client-secret>
 node app.js
 ```
 
-# Navigate to http://localhost:8000
+Navigate to http://localhost:8000
 ```
